@@ -23,6 +23,7 @@ async function run() {
     const testimonialCollection = client
       .db("assignment-12")
       .collection("testimonials");
+    const userCollection = client.db("assignment-12").collection("users");
     //get tools
     app.get("/tools", async (req, res) => {
       const query = {};
@@ -79,6 +80,25 @@ async function run() {
       console.log(req.body);
       const review = req.body;
       const result = await testimonialCollection.insertOne(review);
+      res.send(result);
+    });
+    app.put("/users", async (req, res) => {
+      const email = req.query.email;
+      const details = req.body;
+      const filter = { email };
+      const options = { upsert: true };
+      const update = {
+        $set: {
+          details,
+        },
+      };
+      const result = await userCollection.updateOne(filter, update, options);
+      res.send(result);
+      console.log(email);
+    });
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const result = await userCollection.find(query).toArray();
       res.send(result);
     });
   } finally {
