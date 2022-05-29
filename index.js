@@ -7,6 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
 const uri =
   "mongodb+srv://dbuser1:89NuSGyMNpr6nn4o@cluster0.755op.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
@@ -19,6 +20,9 @@ async function run() {
     await client.connect();
     const toolCollection = client.db("assignment-12").collection("tools");
     const orderCollection = client.db("assignment-12").collection("orders");
+    const testimonialCollection = client
+      .db("assignment-12")
+      .collection("testimonials");
     //get tools
     app.get("/tools", async (req, res) => {
       const query = {};
@@ -52,6 +56,29 @@ async function run() {
       const order = req.body;
       console.log(order);
       const result = await orderCollection.insertOne(order);
+      res.send(result);
+    });
+    app.get("/orders", async (req, res) => {
+      const query = {};
+      const result = orderCollection.find(query);
+      const orders = await result.toArray();
+      res.send(orders);
+    });
+    app.get("/orders/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await orderCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/testimonials", async (req, res) => {
+      const query = {};
+      const result = await testimonialCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.post("/testimonials", async (req, res) => {
+      console.log(req.body);
+      const review = req.body;
+      const result = await testimonialCollection.insertOne(review);
       res.send(result);
     });
   } finally {
