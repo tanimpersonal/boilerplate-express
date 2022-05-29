@@ -6,7 +6,7 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
   "mongodb+srv://dbuser1:89NuSGyMNpr6nn4o@cluster0.755op.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
@@ -25,6 +25,28 @@ async function run() {
       const result = toolCollection.find(query);
       const tools = await result.toArray();
       res.send(tools);
+    });
+    app.get("/tools/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const tool = await toolCollection.findOne(query);
+      res.send(tool);
+      console.log(id);
+    });
+    app.put("/tools/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body.available_quantity;
+      const query = { _id: ObjectId(id) };
+      const options = { upsert: true };
+
+      const update = {
+        $set: {
+          available_quantity: body,
+        },
+      };
+      const result = await toolCollection.updateOne(query, update, options);
+      res.send(result);
+      console.log(id, body);
     });
     app.post("/orders", async (req, res) => {
       const order = req.body;
