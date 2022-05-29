@@ -18,12 +18,19 @@ async function run() {
   try {
     await client.connect();
     const toolCollection = client.db("assignment-12").collection("tools");
-
+    const orderCollection = client.db("assignment-12").collection("orders");
+    //get tools
     app.get("/tools", async (req, res) => {
       const query = {};
       const result = toolCollection.find(query);
       const tools = await result.toArray();
       res.send(tools);
+    });
+    app.post("/orders", async (req, res) => {
+      const order = req.body;
+      console.log(order);
+      const result = await orderCollection.insertOne(order);
+      res.send(result);
     });
   } finally {
     // await client.close();
