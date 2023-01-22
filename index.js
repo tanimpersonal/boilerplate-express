@@ -1,121 +1,49 @@
+let ejs = require("ejs");
 const express = require("express");
 const app = express();
+const dbConnect = require("./utils/dbConnect");
+const toolsRoute = require("./routes/v1/tools.route.js");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 //middleware
 const cors = require("cors");
+const { viewCount } = require("./middleware/viewCount");
+const { rateLimit } = require("express-rate-limit");
+const { errorHandler } = require("./middleware/errorHandler");
 app.use(cors());
 app.use(express.json());
+// can view files staticly
+app.use(express.static("public"));
 
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+dbConnect();
+//application level
+app.use("/api/v1/tools", toolsRoute);
 
-const uri = `mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.755op.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverApi: ServerApiVersion.v1,
-});
-async function run() {
-  try {
-    await client.connect();
-    const toolCollection = client.db("assignment-12").collection("tools");
-    const orderCollection = client.db("assignment-12").collection("orders");
-    const testimonialCollection = client
-      .db("assignment-12")
-      .collection("testimonials");
-    const userCollection = client.db("assignment-12").collection("users");
-    //get tools
-    app.get("/tools", async (req, res) => {
-      const query = {};
-      const result = toolCollection.find(query);
-      const tools = await result.toArray();
-      res.send(tools);
-    });
-    app.get("/tools/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const tool = await toolCollection.findOne(query);
-      res.send(tool);
-      console.log(id);
-    });
-    app.put("/tools/:id", async (req, res) => {
-      const id = req.params.id;
-      const body = req.body.available_quantity;
-      const query = { _id: ObjectId(id) };
-      const options = { upsert: true };
-
-      const update = {
-        $set: {
-          available_quantity: body,
-        },
-      };
-      const result = await toolCollection.updateOne(query, update, options);
-      res.send(result);
-      console.log(id, body);
-    });
-    app.post("/orders", async (req, res) => {
-      const order = req.body;
-      console.log(order);
-      const result = await orderCollection.insertOne(order);
-      res.send(result);
-    });
-    app.get("/orders", async (req, res) => {
-      const query = {};
-      const result = orderCollection.find(query);
-      const orders = await result.toArray();
-      res.send(orders);
-    });
-    app.get("/orders/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { email };
-      const result = await orderCollection.find(query).toArray();
-      res.send(result);
-    });
-    app.get("/testimonials", async (req, res) => {
-      const query = {};
-      const result = await testimonialCollection.find(query).toArray();
-      res.send(result);
-    });
-    app.post("/testimonials", async (req, res) => {
-      console.log(req.body);
-      const review = req.body;
-      const result = await testimonialCollection.insertOne(review);
-      res.send(result);
-    });
-    app.put("/users", async (req, res) => {
-      const email = req.query.email;
-      const details = req.body;
-      const filter = { email };
-      const options = { upsert: true };
-      const update = {
-        $set: {
-          details,
-        },
-      };
-      const result = await userCollection.updateOne(filter, update, options);
-      res.send(result);
-      console.log(email);
-    });
-    app.get("/users", async (req, res) => {
-      const query = {};
-      const result = await userCollection.find(query).toArray();
-      res.send(result);
-    });
-    app.get("/users/:email", async (req, res) => {
-      const email = req.params.email;
-      const query = { email };
-      const result = await userCollection.findOne(query);
-      res.send(result);
-    });
-  } finally {
-    // await client.close();
-  }
-}
-run();
+let id = 1;
 app.get("/", (req, res) => {
   res.send("Hello World!");
+  ejs.render("jj.ejs", { id: id });
 });
+
+// if no route matches
+app.all("*", (req, res) => {
+  res.status(400).send({
+    status: 0,
+    error: "No routes found",
+  });
+});
+
+//global error handler
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
+});
+
+//if error can not be handled by express itself then another handler
+process.on("unhandledRejection", (error) => {
+  console.log(error.name, error.message);
+  app.close(() => {
+    process.exit(1);
+  });
 });

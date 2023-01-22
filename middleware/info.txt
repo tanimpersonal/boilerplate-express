@@ -1,0 +1,7 @@
+application level middleware > will run for any route. if api calls then we will run this
+will place middleware before route call in index file
+
+every controller is a middleware
+
+
+router level middleware -> works only for a route
